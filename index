@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>患者インサイト・ダッシュボード - 株式会社メディキャンバス</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://unpkg.com/chartjs-chart-wordcloud@4.2.0/dist/chartjs-chart-wordcloud.umd.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        .scenario-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: left;
+            font-weight: 500;
+            color: #374151; /* text-gray-700 */
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .scenario-btn:hover {
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        .scenario-btn.active {
+            background-color: #f97316; /* bg-orange-500 */
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .scenario-btn .description {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+        .custom-filters-container {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-72 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
+            <div class="px-6 py-4 flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <img src="https://placehold.co/32x32/f97316/FFFFFF?text=MC" alt="MediCanvas Logo" class="rounded-full">
+                    <h1 class="text-lg font-bold text-gray-800">患者インサイト</h1>
+                </div>
+            </div>
+
+            <div class="flex-grow p-6 overflow-y-auto">
+                <h2 class="text-sm font-semibold text-gray-500 mb-4">分析シナリオを選択</h2>
+                <div id="scenario-buttons" class="space-y-2">
+                    <!-- Scenario buttons will be injected here -->
+                </div>
+
+                <hr class="my-6 border-gray-200">
+
+                <h2 class="text-sm font-semibold text-gray-500 mb-4">カスタム分析 (製品版機能)</h2>
+                <div class="custom-filters-container">
+                    <form id="filter-form">
+                        <div class="space-y-6">
+                            <!-- Keyword Search -->
+                            <div>
+                                <label for="keyword" class="text-sm font-semibold text-gray-600">キーワード</label>
+                                <div class="relative mt-2">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="keyword" name="keyword" placeholder="薬剤名、副作用、悩みなど" class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500" disabled>
+                                </div>
+                            </div>
+                             <!-- Date Range -->
+                            <div>
+                                <label class="text-sm font-semibold text-gray-600">分析期間</label>
+                                <div class="mt-2 space-y-2">
+                                    <input type="date" id="start-date" name="start-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                    <input type="date" id="end-date" name="end-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                </div>
+                            </div>
+                             <!-- Patient Demographics -->
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-600">患者属性</h3>
+                                <div class="mt-2 space-y-3">
+                                    <select id="gender" name="gender" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                        <option value="all">すべての性別</option>
+                                        <option value="female">女性</option>
+                                        <option value="male">男性</option>
+                                    </select>
+                                    <select id="age" name="age" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                        <option value="all">すべての年代</option>
+                                        <option value="10s">10代</option>
+                                        <option value="20s">20代</option>
+                                        <option value="30s">30代</option>
+                                        <option value="40s">40代</option>
+                                        <option value="50s">50代</option>
+                                        <option value="60s">60代以上</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200">
+                <button id="apply-filters-btn" class="w-full bg-gray-300 text-gray-500 font-bold py-2.5 px-4 rounded-lg cursor-not-allowed">
+                    <i class="fas fa-filter mr-2"></i>分析を実行
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Main Header -->
+            <header class="bg-white border-b border-gray-200 flex-shrink-0">
+                <div class="flex items-center justify-between p-4">
+                    <div>
+                        <h2 id="dashboard-title" class="text-xl font-bold text-gray-800"></h2>
+                        <p id="dashboard-period" class="text-sm text-gray-500"></p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button class="text-gray-500 hover:text-gray-800"><i class="fas fa-download"></i></button>
+                        <button class="text-gray-500 hover:text-gray-800"><i class="fas fa-share-alt"></i></button>
+                        <img src="https://placehold.co/40x40/e0e7ff/4338ca?text=A" alt="User Avatar" class="rounded-full">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Key Metrics -->
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex items-center gap-5">
+                        <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">該当患者数</p>
+                            <p id="metric-patients" class="text-2xl font-bold">0人</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex items-center gap-5">
+                        <div class="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i class="fas fa-file-alt text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">関連投稿数</p>
+                            <p id="metric-posts" class="text-2xl font-bold">0件</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex items-center gap-5">
+                        <div class="bg-orange-100 text-orange-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i class="fas fa-tags text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">主要キーワード</p>
+                            <p id="metric-keyword" class="text-2xl font-bold">-</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex items-center gap-5">
+                        <div class="bg-red-100 text-red-600 rounded-full h-12 w-12 flex items-center justify-center">
+                            <i class="fas fa-sad-tear text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">感情分析 (Negative)</p>
+                            <p id="metric-sentiment" class="text-2xl font-bold">-%</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="md:col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="font-bold text-lg mb-4">患者属性</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                            <div class="chart-container h-48"><canvas id="genderChart"></canvas></div>
+                            <div class="chart-container h-48"><canvas id="ageChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="font-bold text-lg mb-4">共起キーワード</h3>
+                        <div class="chart-container h-64"><canvas id="wordCloudChart"></canvas></div>
+                    </div>
+
+                    <!-- Patient Voice -->
+                    <div class="md:col-span-2 lg:col-span-4 bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="font-bold text-lg mb-4">患者様の生の声 (一部抜粋)</h3>
+                        <div id="patient-voice-container" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Pre-calculated scenario data -->
+    <script id="scenario-data" type="application/json">
+    {
+        "scenarios": [
+            { "id": "ra-all", "name": "関節リウマチ (全体)", "description": "疾患全体の基本インサイト" },
+            { "id": "ra-female-30s", "name": "関節リウマチ (30代女性)", "description": "「副作用」に関する声" },
+            { "id": "drug-methotrexate", "name": "薬剤検索: メトトレキサート", "description": "特定の薬剤に関する患者の声" },
+            { "id": "drug-tagrisso", "name": "薬剤検索: タグリッソ", "description": "肺がん治療薬の患者インサイト" },
+            { "id": "drug-forxiga", "name": "薬剤検索: フォシーガ", "description": "糖尿病・腎臓病薬の患者インサイト" },
+            { "id": "mm-all", "name": "多発性骨髄腫 (全体)", "description": "疾患全体の基本インサイト" }
+        ],
+        "results": {
+            "ra-all": {
+                "title": "関節リウマチ患者 分析ダッシュボード", "period": "期間: 2025/01/01 - 2025/08/14",
+                "metrics": { "patients": "350人", "posts": "1,280件", "keyword": "痛み", "sentiment": "68%" },
+                "gender": { "labels": ["女性", "男性"], "data": [82, 18] },
+                "age": { "labels": ["20代", "30代", "40代", "50代", "60代+"], "data": [15, 45, 25, 10, 5] },
+                "wordCloud": [{"key":"痛み","value":95},{"key":"副作用","value":80},{"key":"不安","value":75},{"key":"メトトレキサート","value":70},{"key":"こわばり","value":65},{"key":"注射","value":60},{"key":"費用","value":55},{"key":"仕事","value":50},{"key":"腫れ","value":45}],
+                "posts": [
+                    {"user":"Aさん (30代女性)","date":"2025/06/06","text":"朝の手のこわばりがひどく、ペットボトルの蓋を開けるのも一苦労です。メトトレキサートの副作用で少し気分が悪い日もありますが、痛みが和らぐので続けています。将来への不安は尽きません。"},
+                    {"user":"Bさん (40代男性)","date":"2025/06/05","text":"生物学的製剤の注射を始めてから、劇的に症状が改善しました。ただ、薬の費用が高額なのが悩みです。仕事に影響が出ないか常に心配しています。"},
+                    {"user":"Cさん (50代女性)","date":"2025/05/15","text":"天気が悪い日は特に関節が痛みます。周りからは「見た目は元気そう」と言われるのが辛い。この痛みを分かってもらえない孤独感があります。"}
+                ]
+            },
+            "ra-female-30s": {
+                "title": "関節リウマチ (30代女性) 分析ダッシュボード", "period": "キーワード: 副作用",
+                "metrics": { "patients": "28人", "posts": "95件", "keyword": "副作用", "sentiment": "75%" },
+                "gender": { "labels": ["女性"], "data": [100] },
+                "age": { "labels": ["30代"], "data": [100] },
+                "wordCloud": [{"key":"副作用","value":98},{"key":"吐き気","value":85},{"key":"メトトレキサート","value":80},{"key":"倦怠感","value":70},{"key":"脱毛","value":60},{"key":"皮膚","value":55},{"key":"相談","value":50},{"key":"不安","value":48}],
+                "posts": [
+                    {"user":"Dさん (30代女性)","date":"2025/07/11","text":"メトトレキサートを飲み始めてから、ひどい吐き気に悩まされています。先生に相談して吐き気止めをもらいましたが、それでも辛い日があります。仕事にも集中できず困っています。"},
+                    {"user":"Eさん (30代女性)","date":"2025/07/02","text":"アダリムマブの自己注射をしていますが、注射した場所が赤く腫れて痒くなります。副作用だとわかっていても、毎回続くので少し憂鬱です。"}
+                ]
+            },
+            "drug-methotrexate": {
+                "title": "薬剤「メトトレキサート」分析レポート", "period": "キーワード: メトトレキサート",
+                "metrics": { "patients": "152人", "posts": "480件", "keyword": "副作用", "sentiment": "72%" },
+                "gender": { "labels": ["女性", "男性"], "data": [75, 25] },
+                "age": { "labels": ["30代", "40代", "50代", "60代+"], "data": [40, 35, 15, 10] },
+                "wordCloud": [{"key":"副作用","value":92},{"key":"吐き気","value":88},{"key":"週1回","value":80},{"key":"倦怠感","value":75},{"key":"通院","value":65},{"key":"葉酸","value":60},{"key":"費用","value":58},{"key":"効果","value":55}],
+                "posts": [
+                    {"user":"Bさん (40代男性)","date":"2025/06/05","text":"週1回のメトトレキサート服用を続けています。確かに痛みは抑えられていますが、服用後の2日間はどうしても倦怠感が抜けません。"},
+                    {"user":"Aさん (30代女性)","date":"2025/06/06","text":"メトトレキサートの副作用で少し気分が悪い日もありますが、痛みが和らぐので続けています。将来への不安は尽きません。"}
+                ]
+            },
+            "drug-tagrisso": {
+                "title": "薬剤「タグリッソ」分析レポート", "period": "キーワード: タグリッソ",
+                "metrics": { "patients": "89人", "posts": "310件", "keyword": "副作用", "sentiment": "65%" },
+                "gender": { "labels": ["女性", "男性"], "data": [60, 40] },
+                "age": { "labels": ["50代", "60代", "70代+"], "data": [25, 45, 30] },
+                "wordCloud": [{"key":"副作用","value":95},{"key":"耐性","value":82},{"key":"皮膚障害","value":78},{"key":"爪囲炎","value":70},{"key":"間質性肺炎","value":65},{"key":"効果","value":60},{"key":"下痢","value":55},{"key":"高額","value":50}],
+                "posts": [
+                    {"user":"Hさん (60代女性)","date":"2025/07/20","text":"タグリッソを服用して1年。爪の周りが痛くなる副作用（爪囲炎）がつらいですが、腫瘍が小さくなっているので頑張っています。保湿ケアが欠かせません。"},
+                    {"user":"Iさん (70代男性)","date":"2025/06/28","text":"タグリッソの効果は実感していますが、いつか耐性ができて効かなくなるのではないかという不安が常にあります。間質性肺炎の初期症状にも気をつけないといけないと聞き、少しの咳でも心配になります。"}
+                ]
+            },
+            "drug-forxiga": {
+                "title": "薬剤「フォシーガ」分析レポート", "period": "キーワード: フォシーガ",
+                "metrics": { "patients": "210人", "posts": "650件", "keyword": "血糖値", "sentiment": "45%" },
+                "gender": { "labels": ["女性", "男性"], "data": [48, 52] },
+                "age": { "labels": ["40代", "50代", "60代", "70代+"], "data": [15, 35, 40, 10] },
+                "wordCloud": [{"key":"血糖値","value":90},{"key":"体重減少","value":85},{"key":"効果","value":80},{"key":"尿路感染","value":70},{"key":"脱水","value":65},{"key":"腎臓","value":60},{"key":"頻尿","value":55},{"key":"薬価","value":50}],
+                "posts": [
+                    {"user":"Jさん (50代男性)","date":"2025/08/01","text":"フォシーガを飲み始めてから血糖値が安定し、体重も少し落ちました。効果は感じていますが、夏場は脱水に気をつけないといけないので水分補給を意識しています。"},
+                    {"user":"Kさん (60代女性)","date":"2025/07/15","text":"慢性腎臓病でフォシーガを服用中です。腎臓の保護効果に期待していますが、たまに尿路感染のような症状が出ることがあり不安です。主治医にはすぐに相談するようにしています。"}
+                ]
+            },
+            "mm-all": {
+                "title": "多発性骨髄腫 分析ダッシュボード", "period": "期間: 2025/01/01 - 2025/08/14",
+                "metrics": { "patients": "57人", "posts": "215件", "keyword": "治療", "sentiment": "75%" },
+                "gender": { "labels": ["女性", "男性"], "data": [45, 55] },
+                "age": { "labels": ["40代", "50代", "60代", "70代+"], "data": [20, 35, 30, 15] },
+                "wordCloud": [{"key":"治療","value":90},{"key":"副作用","value":85},{"key":"骨折","value":70},{"key":"ボルテゾミブ","value":65},{"key":"通院","value":60},{"key":"貧血","value":55},{"key":"だるさ","value":50},{"key":"家族","value":45}],
+                "posts": [
+                    {"user":"Fさん (60代男性)","date":"2025/06/13","text":"ボルテゾミブの治療中です。副作用のだるさが辛い日もありますが、病気の進行が抑えられているので頑張っています。通院の付き添いをしてくれる妻には感謝しかありません。"},
+                    {"user":"Gさん (70代女性)","date":"2025/06/17","text":"骨がもろくなっていると言われ、少しのことで骨折しないか不安です。日常生活でも重いものを持たないように気をつけています。治療費も心配の種です。"}
+                ]
+            }
+        }
+    }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let genderChart, ageChart, wordCloudChart;
+            
+            const scenarioData = JSON.parse(document.getElementById('scenario-data').textContent);
+
+            const createGenderChart = (data) => {
+                const ctx = document.getElementById('genderChart').getContext('2d');
+                if (genderChart) genderChart.destroy();
+                genderChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{ data: data.data, backgroundColor: ['#fb923c', '#60a5fa'], borderColor: '#ffffff', borderWidth: 2 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
+                });
+            };
+
+            const createAgeChart = (data) => {
+                const ctx = document.getElementById('ageChart').getContext('2d');
+                if (ageChart) ageChart.destroy();
+                ageChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{ label: '年代分布', data: data.data, backgroundColor: '#60a5fa', borderRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+                });
+            };
+
+            const createWordCloudChart = (data) => {
+                const ctx = document.getElementById('wordCloudChart').getContext('2d');
+                if (wordCloudChart) wordCloudChart.destroy();
+                wordCloudChart = new Chart(ctx, {
+                    type: 'wordCloud',
+                    data: {
+                        labels: data.map(d => d.key),
+                        datasets: [{ label: '', data: data.map(d => d.value) }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                        elements: {
+                            word: {
+                                color: (c) => {
+                                    const v = c.raw;
+                                    if (v > 80) return '#ef4444'; if (v > 60) return '#f97316'; if (v > 40) return '#3b82f6'; return '#6b7280';
+                                },
+                                font: { family: "'Inter', 'Noto Sans JP', sans-serif", weight: 'bold' }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const displayScenario = (scenarioId) => {
+                const data = scenarioData.results[scenarioId];
+                if (!data) return;
+
+                // Update active button
+                document.querySelectorAll('.scenario-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.scenarioId === scenarioId);
+                });
+
+                // Update titles
+                document.getElementById('dashboard-title').textContent = data.title;
+                document.getElementById('dashboard-period').textContent = data.period;
+
+                // Update metrics
+                document.getElementById('metric-patients').textContent = data.metrics.patients;
+                document.getElementById('metric-posts').textContent = data.metrics.posts;
+                document.getElementById('metric-keyword').textContent = data.metrics.keyword;
+                document.getElementById('metric-sentiment').textContent = data.metrics.sentiment;
+
+                // Update charts
+                createGenderChart(data.gender);
+                createAgeChart(data.age);
+                createWordCloudChart(data.wordCloud);
+
+                // Update patient voices
+                const container = document.getElementById('patient-voice-container');
+                container.innerHTML = '';
+                data.posts.forEach(post => {
+                    const postEl = document.createElement('div');
+                    postEl.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
+                    postEl.innerHTML = `
+                        <div class="flex justify-between items-center">
+                           <p class="text-sm font-semibold text-gray-700">${post.user}</p>
+                           <p class="text-xs text-gray-400">${post.date}</p>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">${post.text}</p>
+                    `;
+                    container.appendChild(postEl);
+                });
+            };
+
+            // --- Initial Setup ---
+            const scenarioButtonsContainer = document.getElementById('scenario-buttons');
+            scenarioData.scenarios.forEach(scenario => {
+                const button = document.createElement('button');
+                button.className = 'scenario-btn';
+                button.dataset.scenarioId = scenario.id;
+                button.innerHTML = `
+                    ${scenario.name}
+                    <div class="description">${scenario.description}</div>
+                `;
+                button.addEventListener('click', () => displayScenario(scenario.id));
+                scenarioButtonsContainer.appendChild(button);
+            });
+
+            // Display the first scenario by default
+            if (scenarioData.scenarios.length > 0) {
+                displayScenario(scenarioData.scenarios[0].id);
+            }
+        });
+    </script>
+</body>
+</html>
