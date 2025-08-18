@@ -298,19 +298,38 @@
             try {
                 const response = await fetch('list関節リウマチ.json');
                 const raList = await response.json();
-                const formatPost = (item) => {
-                    const genderLabel = item['性別'] === '男' ? '男性' : '女性';
-                    return {
-                        user: `${item['投稿者']} (${item['年代']}${genderLabel})`,
+
+                const raAllPosts = scenarioData.results['ra-all'].posts;
+                const offset = raAllPosts.length;
+                const formatted = [];
+                const female30s = [];
+                const methotrexatePosts = [];
+
+                raList.forEach((item, idx) => {
+                    const gender = item['性別'];
+                    const genderLabel = (gender === '男' || gender === '男性') ? '男性' : '女性';
+                    const letter = String.fromCharCode(65 + offset + idx);
+                    const textParts = [
+                        item['疾患・病気・体調について'],
+                        item['症状や疾患についての「不安」など'],
+                        item['治療内容']
+                    ].filter(Boolean);
+                    const post = {
+                        user: `${letter}さん (${item['年代']}${genderLabel})`,
                         date: item['日時'],
-                        text: item['疾患・病気・体調について']
+                        text: textParts.join(' ')
                     };
-                };
-                const formatted = raList.map(formatPost);
-                scenarioData.results['ra-all'].posts.push(...formatted.slice(0, 3));
-                const female30s = raList.filter(i => i['年代'] === '30代' && i['性別'] === '女').map(formatPost);
+                    formatted.push(post);
+                    if (item['年代'] === '30代' && (gender === '女' || gender === '女性')) {
+                        female30s.push(post);
+                    }
+                    if ((item['使った薬'] || '').includes('メトトレキサート')) {
+                        methotrexatePosts.push(post);
+                    }
+                });
+
+                raAllPosts.push(...formatted);
                 scenarioData.results['ra-female-30s'].posts.push(...female30s);
-                const methotrexatePosts = raList.filter(i => (i['使った薬'] || '').includes('メトトレキサート')).map(formatPost);
                 scenarioData.results['drug-methotrexate'].posts.push(...methotrexatePosts.slice(0, 3));
             } catch (e) {
                 console.error('Failed to load additional posts:', e);
