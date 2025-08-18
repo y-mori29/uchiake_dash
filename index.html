@@ -290,10 +290,31 @@
     </script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             let genderChart, ageChart;
-            
+
             const scenarioData = JSON.parse(document.getElementById('scenario-data').textContent);
+
+            try {
+                const response = await fetch('list関節リウマチ.json');
+                const raList = await response.json();
+                const formatPost = (item) => {
+                    const genderLabel = item['性別'] === '男' ? '男性' : '女性';
+                    return {
+                        user: `${item['投稿者']} (${item['年代']}${genderLabel})`,
+                        date: item['日時'],
+                        text: item['疾患・病気・体調について']
+                    };
+                };
+                const formatted = raList.map(formatPost);
+                scenarioData.results['ra-all'].posts.push(...formatted.slice(0, 3));
+                const female30s = raList.filter(i => i['年代'] === '30代' && i['性別'] === '女').map(formatPost);
+                scenarioData.results['ra-female-30s'].posts.push(...female30s);
+                const methotrexatePosts = raList.filter(i => (i['使った薬'] || '').includes('メトトレキサート')).map(formatPost);
+                scenarioData.results['drug-methotrexate'].posts.push(...methotrexatePosts.slice(0, 3));
+            } catch (e) {
+                console.error('Failed to load additional posts:', e);
+            }
 
             const createGenderChart = (data) => {
                 const ctx = document.getElementById('genderChart').getContext('2d');
