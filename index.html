@@ -23,37 +23,65 @@
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         .chart-container { position: relative; height: 300px; width: 100%; }
         .scenario-btn {
-            display: block;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            text-align: left;
-            font-weight: 500;
+            display: block; width: 100%; padding: 0.75rem 1rem;
+            border-radius: 0.5rem; text-align: left; font-weight: 500;
             color: #374151; /* text-gray-700 */
             transition: background-color 0.2s, color 0.2s;
         }
-        .scenario-btn:hover {
-            background-color: #f3f4f6; /* bg-gray-100 */
-        }
+        .scenario-btn:hover { background-color: #f3f4f6; /* bg-gray-100 */ }
         .scenario-btn.active {
             background-color: #f97316; /* bg-orange-500 */
-            color: white;
-            font-weight: 600;
+            color: white; font-weight: 600;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .scenario-btn .description {
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-top: 0.25rem;
-        }
-        .custom-filters-container {
-            opacity: 0.5;
-            pointer-events: none;
-        }
+        .scenario-btn .description { font-size: 0.75rem; opacity: 0.7; margin-top: 0.25rem; }
+        .custom-filters-container { opacity: 0.5; pointer-events: none; }
+        
+        /* 認証機能用のスタイル */
+        #dashboard-container { display: none; }
+        #login-container { display: none; }
     </style>
 </head>
 <body class="text-gray-800">
-    <div class="flex h-screen overflow-hidden">
+
+    <!-- ログイン画面 -->
+    <div id="login-container" class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+            <div class="text-center">
+                 <div class="flex items-center justify-center gap-3 mb-4">
+                    <img src="https://placehold.co/40x40/f97316/FFFFFF?text=MC" alt="MediCanvas Logo" class="rounded-full">
+                    <h1 class="text-2xl font-bold text-gray-800">患者インサイト</h1>
+                </div>
+                <p class="text-gray-500">ログインまたは新規登録してください</p>
+            </div>
+            
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="email" class="text-sm font-medium text-gray-700">メールアドレス</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500">
+                </div>
+                <div>
+                    <label for="password" class="text-sm font-medium text-gray-700">パスワード</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500">
+                </div>
+                
+                <div id="auth-error" class="text-sm text-red-600 hidden"></div>
+
+                <div class="flex items-center justify-between gap-4">
+                    <button type="button" id="signup-btn" class="w-full px-4 py-2 font-semibold text-orange-600 bg-white border border-orange-500 rounded-lg hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all">
+                        新規登録
+                    </button>
+                    <button type="submit" id="login-btn" class="w-full px-4 py-2 font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all">
+                        ログイン
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ダッシュボード本体 -->
+    <div id="dashboard-container" class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside id="sidebar" class="w-72 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
             <div class="px-6 py-4 flex items-center justify-between border-b border-gray-200">
@@ -83,7 +111,7 @@
                                     <input type="text" id="keyword" name="keyword" placeholder="薬剤名、副作用、悩みなど" class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500" disabled>
                                 </div>
                             </div>
-                             <!-- Date Range -->
+                                <!-- Date Range -->
                             <div>
                                 <label class="text-sm font-semibold text-gray-600">分析期間</label>
                                 <div class="mt-2 space-y-2">
@@ -91,7 +119,7 @@
                                     <input type="date" id="end-date" name="end-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
                                 </div>
                             </div>
-                             <!-- Patient Demographics -->
+                                <!-- Patient Demographics -->
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-600">患者属性</h3>
                                 <div class="mt-2 space-y-3">
@@ -135,7 +163,11 @@
                     <div class="flex items-center gap-4">
                         <button class="text-gray-500 hover:text-gray-800"><i class="fas fa-download"></i></button>
                         <button class="text-gray-500 hover:text-gray-800"><i class="fas fa-share-alt"></i></button>
-                        <img src="https://placehold.co/40x40/e0e7ff/4338ca?text=A" alt="User Avatar" class="rounded-full">
+                        <div class="flex items-center gap-3">
+                            <img src="https://placehold.co/40x40/e0e7ff/4338ca?text=U" alt="User Avatar" class="rounded-full">
+                            <div id="user-info" class="text-sm font-medium text-gray-700"></div>
+                        </div>
+                        <button id="logout-btn" title="ログアウト" class="text-gray-500 hover:text-orange-600 transition-colors"><i class="fas fa-sign-out-alt fa-lg"></i></button>
                     </div>
                 </div>
             </header>
@@ -143,7 +175,6 @@
             <!-- Dashboard Grid -->
             <main class="flex-1 overflow-y-auto p-6">
                 <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    
                     <!-- Key Metrics -->
                     <div class="bg-white p-5 rounded-xl shadow-sm flex items-center gap-5">
                         <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center">
@@ -238,7 +269,7 @@
                 "wordCloud": [{"key":"副作用","value":98},{"key":"吐き気","value":85},{"key":"メトトレキサート","value":80},{"key":"倦怠感","value":70},{"key":"脱毛","value":60},{"key":"皮膚","value":55},{"key":"相談","value":50},{"key":"不安","value":48}],
                 "posts": [
                     {"user":"Dさん (30代女性)","date":"2025/07/11","text":"メトトレキサートを飲み始めてから、ひどい吐き気に悩まされています。先生に相談して吐き気止めをもらいましたが、それでも辛い日があります。仕事にも集中できず困っています。"},
-                    {"user":"Eさん (30代女性)","date":"2025/07/02","text":"アダリムマブの自己注射をしていますが、注射した場所が赤く腫れて痒くなります。副作用だとわかっていても、毎回続くので少し憂鬱です。"}
+                    {"user":"Eさん (30代女性)","date":"2025/07/02","text":"アダリムマबの自己注射をしていますが、注射した場所が赤く腫れて痒くなります。副作用だとわかっていても、毎回続くので少し憂鬱です。"}
                 ]
             },
             "drug-methotrexate": {
@@ -288,13 +319,120 @@
         }
     }
     </script>
+    
+    <!-- Firebase SDK と 認証ロジック -->
+    <script type="module">
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
+        // ===================================================================================
+        // TODO: ここにFirebaseプロジェクトの設定を貼り付けてください
+        // Firebaseコンソール > プロジェクト設定 > 全般 > マイアプリ で確認できます
+        const firebaseConfig = {
+            apiKey: "AIzaSyApKhq2QKn4H0PZG2UUh3Z4Sre0AtvKhQk",
+            authDomain: "uchiake-dash.firebaseapp.com",
+            projectId: "uchiake-dash",
+            storageBucket: "uchiake-dash.firebasestorage.app",
+            messagingSenderId: "692123216049",
+            appId: "1:692123216049:web:b2a9aef641fa74f6c51a90",
+            measurementId: "G-BZRN7LJQ2Q"
+        };
+        // ===================================================================================
+
+        // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // UI要素の取得
+        const loginContainer = document.getElementById('login-container');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const loginForm = document.getElementById('login-form');
+        const signupBtn = document.getElementById('signup-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const authError = document.getElementById('auth-error');
+        const userInfo = document.getElementById('user-info');
+        
+        let isDashboardInitialized = false;
+
+        // エラーメッセージ表示
+        const showAuthError = (message) => {
+            authError.textContent = message;
+            authError.classList.remove('hidden');
+        };
+
+        // 認証状態の監視
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // ログインしている場合
+                loginContainer.style.display = 'none';
+                dashboardContainer.style.display = 'flex';
+                userInfo.textContent = user.email;
+
+                // ダッシュボードが初期化されていなければ初期化処理を呼ぶ
+                if (!isDashboardInitialized) {
+                    initializeDashboard();
+                    isDashboardInitialized = true;
+                }
+            } else {
+                // ログアウトしている場合
+                loginContainer.style.display = 'flex';
+                dashboardContainer.style.display = 'none';
+                userInfo.textContent = '';
+            }
+        });
+
+        // ログイン処理
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            authError.classList.add('hidden');
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    console.error("Login Error:", error);
+                    showAuthError("メールアドレスまたはパスワードが正しくありません。");
+                });
+        });
+        
+        // 新規登録処理
+        signupBtn.addEventListener('click', () => {
+            authError.classList.add('hidden');
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            if (email && password) {
+                 createUserWithEmailAndPassword(auth, email, password)
+                    .catch((error) => {
+                        console.error("Signup Error:", error);
+                        if (error.code === 'auth/weak-password') {
+                            showAuthError("パスワードは6文字以上で設定してください。");
+                        } else if (error.code === 'auth/email-already-in-use') {
+                            showAuthError("このメールアドレスは既に使用されています。");
+                        } else {
+                            showAuthError("新規登録に失敗しました。");
+                        }
+                    });
+            } else {
+                showAuthError("メールアドレスとパスワードを入力してください。");
+            }
+        });
+
+        // ログアウト処理
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+    </script>
+
+    <!-- ダッシュボード描画ロジック -->
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        function initializeDashboard() {
             let genderChart, ageChart;
 
             const scenarioData = JSON.parse(document.getElementById('scenario-data').textContent);
-
+            
             try {
                 const response = await fetch('list関節リウマチ.json');
                 const raList = await response.json();
@@ -334,7 +472,7 @@
             } catch (e) {
                 console.error('Failed to load additional posts:', e);
             }
-
+            */
             const createGenderChart = (data) => {
                 const ctx = document.getElementById('genderChart').getContext('2d');
                 if (genderChart) genderChart.destroy();
@@ -364,11 +502,17 @@
             const createWordCloudChart = (data) => {
                 const container = document.getElementById('wordCloudChart');
                 container.innerHTML = '';
+                const maxValue = Math.max(...data.map(item => item.value));
                 data.forEach(item => {
                     const span = document.createElement('span');
                     span.textContent = item.key;
-                    span.style.fontSize = `${12 + item.value * 0.3}px`;
-                    span.className = 'm-2 text-gray-700';
+                    // ワードクラウドの文字サイズを調整
+                    const fontSize = 12 + (item.value / maxValue) * 24;
+                    span.style.fontSize = `${fontSize}px`;
+                    // ランダムな色合いを追加
+                    const opacity = 0.6 + (item.value / maxValue) * 0.4;
+                    span.style.color = `rgba(55, 65, 81, ${opacity})`;
+                    span.className = 'm-1 md:m-2 p-1 font-medium';
                     container.appendChild(span);
                 });
             };
@@ -405,8 +549,8 @@
                     postEl.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
                     postEl.innerHTML = `
                         <div class="flex justify-between items-center">
-                           <p class="text-sm font-semibold text-gray-700">${post.user}</p>
-                           <p class="text-xs text-gray-400">${post.date}</p>
+                            <p class="text-sm font-semibold text-gray-700">${post.user}</p>
+                            <p class="text-xs text-gray-400">${post.date}</p>
                         </div>
                         <p class="text-sm text-gray-600 mt-2">${post.text}</p>
                     `;
@@ -432,7 +576,7 @@
             if (scenarioData.scenarios.length > 0) {
                 displayScenario(scenarioData.scenarios[0].id);
             }
-        });
+        }
     </script>
 </body>
 </html>
