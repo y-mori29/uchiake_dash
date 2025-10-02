@@ -52,7 +52,7 @@
                     <img src="https://placehold.co/40x40/f97316/FFFFFF?text=MC" alt="MediCanvas Logo" class="rounded-full">
                     <h1 class="text-2xl font-bold text-gray-800">患者インサイト</h1>
                 </div>
-                <p class="text-gray-500">ログインまたは新規登録してください</p>
+                <p class="text-gray-500">ログインまたは新規登録をしてください</p>
             </div>
             
             <form id="login-form" class="space-y-6">
@@ -63,6 +63,7 @@
                 <div>
                     <label for="password" class="text-sm font-medium text-gray-700">パスワード</label>
                     <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500">
+                    <p id="password-policy" class="text-xs text-gray-500 mt-2 hidden">パスワードは6文字以上で、大文字、小文字、数字をそれぞれ1文字以上含めてください。</p>
                 </div>
                 
                 <div id="auth-error" class="text-sm text-red-600 hidden"></div>
@@ -320,23 +321,22 @@
     }
     </script>
     
-    <!-- Firebase SDK と 認証ロジック -->
+    <!-- Firebase SDK と 認証・ダッシュボード描画ロジック -->
     <script type="module">
         // Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // ===================================================================================
-        // TODO: ここにFirebaseプロジェクトの設定を貼り付けてください
+        // TODO: ここにあなたのFirebaseプロジェクトの設定を貼り付けてください
         // Firebaseコンソール > プロジェクト設定 > 全般 > マイアプリ で確認できます
         const firebaseConfig = {
-            apiKey: "AIzaSyApKhq2QKn4H0PZG2UUh3Z4Sre0AtvKhQk",
-            authDomain: "uchiake-dash.firebaseapp.com",
-            projectId: "uchiake-dash",
-            storageBucket: "uchiake-dash.firebasestorage.app",
-            messagingSenderId: "692123216049",
-            appId: "1:692123216049:web:b2a9aef641fa74f6c51a90",
-            measurementId: "G-BZRN7LJQ2Q"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
         // ===================================================================================
 
@@ -354,6 +354,7 @@
         const passwordInput = document.getElementById('password');
         const authError = document.getElementById('auth-error');
         const userInfo = document.getElementById('user-info');
+        const passwordPolicy = document.getElementById('password-policy');
         
         let isDashboardInitialized = false;
 
@@ -381,12 +382,15 @@
                 loginContainer.style.display = 'flex';
                 dashboardContainer.style.display = 'none';
                 userInfo.textContent = '';
+                // ログアウトしたらダッシュボード初期化フラグをリセット
+                isDashboardInitialized = false; 
             }
         });
 
         // ログイン処理
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            passwordPolicy.classList.add('hidden'); // パスワードポリシーを隠す
             authError.classList.add('hidden');
             const email = emailInput.value;
             const password = passwordInput.value;
@@ -399,6 +403,7 @@
         
         // 新規登録処理
         signupBtn.addEventListener('click', () => {
+            passwordPolicy.classList.remove('hidden'); // パスワードポリシーを表示
             authError.classList.add('hidden');
             const email = emailInput.value;
             const password = passwordInput.value;
@@ -407,10 +412,13 @@
                     .catch((error) => {
                         console.error("Signup Error:", error);
                         if (error.code === 'auth/weak-password') {
-                            showAuthError("パスワードは6文字以上で設定してください。");
+                            showAuthError("パスワードが要件を満たしていません。6文字以上で、大文字、小文字、数字を含めてください。");
                         } else if (error.code === 'auth/email-already-in-use') {
                             showAuthError("このメールアドレスは既に使用されています。");
-                        } else {
+                        } else if (error.code === 'auth/invalid-email') {
+                            showAuthError("有効なメールアドレスの形式で入力してください。");
+                        }
+                         else {
                             showAuthError("新規登録に失敗しました。");
                         }
                     });
@@ -424,55 +432,12 @@
             signOut(auth);
         });
 
-    </script>
-
-    <!-- ダッシュボード描画ロジック -->
-    <script>
+        // --- ここからダッシュボード描画ロジック ---
         function initializeDashboard() {
             let genderChart, ageChart;
 
             const scenarioData = JSON.parse(document.getElementById('scenario-data').textContent);
             
-            try {
-                const response = await fetch('list関節リウマチ.json');
-                const raList = await response.json();
-
-                const raAllPosts = scenarioData.results['ra-all'].posts;
-                const offset = raAllPosts.length;
-                const formatted = [];
-                const female30s = [];
-                const methotrexatePosts = [];
-
-                raList.forEach((item, idx) => {
-                    const gender = item['性別'];
-                    const genderLabel = (gender === '男' || gender === '男性') ? '男性' : '女性';
-                    const letter = String.fromCharCode(65 + offset + idx);
-                    const textParts = [
-                        item['疾患・病気・体調について'],
-                        item['症状や疾患についての「不安」など'],
-                        item['治療内容']
-                    ].filter(Boolean);
-                    const post = {
-                        user: `${letter}さん (${item['年代']}${genderLabel})`,
-                        date: item['日時'],
-                        text: textParts.join(' ')
-                    };
-                    formatted.push(post);
-                    if (item['年代'] === '30代' && (gender === '女' || gender === '女性')) {
-                        female30s.push(post);
-                    }
-                    if ((item['使った薬'] || '').includes('メトトレキサート')) {
-                        methotrexatePosts.push(post);
-                    }
-                });
-
-                raAllPosts.push(...formatted);
-                scenarioData.results['ra-female-30s'].posts.push(...female30s);
-                scenarioData.results['drug-methotrexate'].posts.push(...methotrexatePosts.slice(0, 3));
-            } catch (e) {
-                console.error('Failed to load additional posts:', e);
-            }
-            */
             const createGenderChart = (data) => {
                 const ctx = document.getElementById('genderChart').getContext('2d');
                 if (genderChart) genderChart.destroy();
@@ -502,14 +467,12 @@
             const createWordCloudChart = (data) => {
                 const container = document.getElementById('wordCloudChart');
                 container.innerHTML = '';
-                const maxValue = Math.max(...data.map(item => item.value));
+                const maxValue = Math.max(...data.map(item => item.value), 0);
                 data.forEach(item => {
                     const span = document.createElement('span');
                     span.textContent = item.key;
-                    // ワードクラウドの文字サイズを調整
                     const fontSize = 12 + (item.value / maxValue) * 24;
                     span.style.fontSize = `${fontSize}px`;
-                    // ランダムな色合いを追加
                     const opacity = 0.6 + (item.value / maxValue) * 0.4;
                     span.style.color = `rgba(55, 65, 81, ${opacity})`;
                     span.className = 'm-1 md:m-2 p-1 font-medium';
@@ -521,27 +484,21 @@
                 const data = scenarioData.results[scenarioId];
                 if (!data) return;
 
-                // Update active button
                 document.querySelectorAll('.scenario-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.scenarioId === scenarioId);
                 });
 
-                // Update titles
                 document.getElementById('dashboard-title').textContent = data.title;
                 document.getElementById('dashboard-period').textContent = data.period;
-
-                // Update metrics
                 document.getElementById('metric-patients').textContent = data.metrics.patients;
                 document.getElementById('metric-posts').textContent = data.metrics.posts;
                 document.getElementById('metric-keyword').textContent = data.metrics.keyword;
                 document.getElementById('metric-sentiment').textContent = data.metrics.sentiment;
 
-                // Update charts
                 createGenderChart(data.gender);
                 createAgeChart(data.age);
                 createWordCloudChart(data.wordCloud);
 
-                // Update patient voices
                 const container = document.getElementById('patient-voice-container');
                 container.innerHTML = '';
                 data.posts.forEach(post => {
@@ -560,6 +517,7 @@
 
             // --- Initial Setup ---
             const scenarioButtonsContainer = document.getElementById('scenario-buttons');
+            scenarioButtonsContainer.innerHTML = ''; // ボタンの重複作成を防ぐ
             scenarioData.scenarios.forEach(scenario => {
                 const button = document.createElement('button');
                 button.className = 'scenario-btn';
@@ -572,11 +530,11 @@
                 scenarioButtonsContainer.appendChild(button);
             });
 
-            // Display the first scenario by default
             if (scenarioData.scenarios.length > 0) {
                 displayScenario(scenarioData.scenarios[0].id);
             }
         }
     </script>
+
 </body>
 </html>
