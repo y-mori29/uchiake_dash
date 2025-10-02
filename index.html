@@ -35,7 +35,6 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .scenario-btn .description { font-size: 0.75rem; opacity: 0.7; margin-top: 0.25rem; }
-        .custom-filters-container { opacity: 0.5; pointer-events: none; }
         
         /* 認証機能用のスタイル */
         #dashboard-container { display: none; }
@@ -101,7 +100,7 @@
                 <hr class="my-6 border-gray-200">
 
                 <h2 class="text-sm font-semibold text-gray-500 mb-4">カスタム分析</h2>
-                <div class="custom-filters-container">
+                <div id="custom-filters-container">
                     <form id="filter-form">
                         <div class="space-y-6">
                             <!-- Keyword Search -->
@@ -109,27 +108,27 @@
                                 <label for="keyword" class="text-sm font-semibold text-gray-600">キーワード</label>
                                 <div class="relative mt-2">
                                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                    <input type="text" id="keyword" name="keyword" placeholder="薬剤名、副作用、悩みなど" class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500" disabled>
+                                    <input type="text" id="keyword" name="keyword" placeholder="薬剤名、副作用、悩みなど" class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500">
                                 </div>
                             </div>
                                 <!-- Date Range -->
                             <div>
                                 <label class="text-sm font-semibold text-gray-600">分析期間</label>
                                 <div class="mt-2 space-y-2">
-                                    <input type="date" id="start-date" name="start-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
-                                    <input type="date" id="end-date" name="end-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                    <input type="date" id="start-date" name="start-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white">
+                                    <input type="date" id="end-date" name="end-date" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white">
                                 </div>
                             </div>
                                 <!-- Patient Demographics -->
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-600">患者属性</h3>
                                 <div class="mt-2 space-y-3">
-                                    <select id="gender" name="gender" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                    <select id="gender" name="gender" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white">
                                         <option value="all">すべての性別</option>
                                         <option value="female">女性</option>
                                         <option value="male">男性</option>
                                     </select>
-                                    <select id="age" name="age" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white" disabled>
+                                    <select id="age" name="age" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-white">
                                         <option value="all">すべての年代</option>
                                         <option value="10s">10代</option>
                                         <option value="20s">20代</option>
@@ -146,7 +145,7 @@
             </div>
 
             <div class="p-6 border-t border-gray-200">
-                <button id="apply-filters-btn" class="w-full bg-gray-300 text-gray-500 font-bold py-2.5 px-4 rounded-lg cursor-not-allowed">
+                <button id="apply-filters-btn" class="w-full bg-orange-500 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-orange-600 transition-all">
                     <i class="fas fa-filter mr-2"></i>分析を実行
                 </button>
             </div>
@@ -328,8 +327,8 @@
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // ===================================================================================
-        // TODO: ここにあなたのFirebaseプロジェクトの設定を貼り付けてください
-        // Firebaseコンソール > プロジェクト設定 > 全般 > マイアプリ で確認できます
+        // ▲▲▲ 重要 ▲▲▲
+        // TODO: 下の firebaseConfig オブジェクトを、あなたのFirebaseプロジェクトのものに置き換えてください。
         const firebaseConfig = {
         apiKey: "AIzaSyApKhq2QKn4H0PZG2UUh3Z4Sre0AtvKhQk",
         authDomain: "uchiake-dash.firebaseapp.com",
@@ -340,12 +339,19 @@
         measurementId: "G-BZRN7LJQ2Q"
         };
         // ===================================================================================
+        
+        if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+            const errorMsg = "Firebaseのプロジェクト設定が完了していません。\ndashboard-auth.html ファイルを編集して、あなたのFirebaseプロジェクトのfirebaseConfig情報を貼り付けてください。";
+            console.error(errorMsg);
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('auth-error').textContent = "【設定エラー】Firebaseの接続情報が設定されていません。";
+            document.getElementById('auth-error').classList.remove('hidden');
+            throw new Error(errorMsg);
+        }
 
-        // Firebaseの初期化
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // UI要素の取得
         const loginContainer = document.getElementById('login-container');
         const dashboardContainer = document.getElementById('dashboard-container');
         const loginForm = document.getElementById('login-form');
@@ -359,67 +365,57 @@
         
         let isDashboardInitialized = false;
 
-        // エラーメッセージ表示
         const showAuthError = (message) => {
             authError.textContent = message;
             authError.classList.remove('hidden');
         };
 
-        // 認証状態の監視
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // ログインしている場合
                 loginContainer.style.display = 'none';
                 dashboardContainer.style.display = 'flex';
                 userInfo.textContent = user.email;
-
-                // ダッシュボードが初期化されていなければ初期化処理を呼ぶ
                 if (!isDashboardInitialized) {
                     initializeDashboard();
                     isDashboardInitialized = true;
                 }
             } else {
-                // ログアウトしている場合
                 loginContainer.style.display = 'flex';
                 dashboardContainer.style.display = 'none';
                 userInfo.textContent = '';
-                // ログアウトしたらダッシュボード初期化フラグをリセット
                 isDashboardInitialized = false; 
             }
         });
 
-        // ログイン処理
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            passwordPolicy.classList.add('hidden'); // パスワードポリシーを隠す
+            passwordPolicy.classList.add('hidden');
             authError.classList.add('hidden');
             const email = emailInput.value;
             const password = passwordInput.value;
             signInWithEmailAndPassword(auth, email, password)
                 .catch((error) => {
-                    console.error("Login Error:", error);
+                    console.error("Login Error:", error.code, error.message);
                     showAuthError("メールアドレスまたはパスワードが正しくありません。");
                 });
         });
         
-        // 新規登録処理
         signupBtn.addEventListener('click', () => {
-            passwordPolicy.classList.remove('hidden'); // パスワードポリシーを表示
+            passwordPolicy.classList.remove('hidden');
             authError.classList.add('hidden');
             const email = emailInput.value;
             const password = passwordInput.value;
             if (email && password) {
                  createUserWithEmailAndPassword(auth, email, password)
                     .catch((error) => {
-                        console.error("Signup Error:", error);
+                        console.error("Signup Error:", error.code, error.message);
                         if (error.code === 'auth/weak-password') {
                             showAuthError("パスワードが要件を満たしていません。6文字以上で、大文字、小文字、数字を含めてください。");
                         } else if (error.code === 'auth/email-already-in-use') {
                             showAuthError("このメールアドレスは既に使用されています。");
                         } else if (error.code === 'auth/invalid-email') {
                             showAuthError("有効なメールアドレスの形式で入力してください。");
-                        }
-                         else {
+                        } else {
                             showAuthError("新規登録に失敗しました。");
                         }
                     });
@@ -428,26 +424,35 @@
             }
         });
 
-        // ログアウト処理
         logoutBtn.addEventListener('click', () => {
             signOut(auth);
         });
 
-        // --- ここからダッシュボード描画ロジック ---
+        // --- ダッシュボード描画ロジック ---
         function initializeDashboard() {
             let genderChart, ageChart;
-
             const scenarioData = JSON.parse(document.getElementById('scenario-data').textContent);
             
+            // --- カスタム分析機能のための要素取得 ---
+            const applyFiltersBtn = document.getElementById('apply-filters-btn');
+            const filterForm = document.getElementById('filter-form');
+            const keywordInput = document.getElementById('keyword');
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const genderInput = document.getElementById('gender');
+            const ageInput = document.getElementById('age');
+
+            // 全シナリオの投稿を結合したマスターデータを作成
+            const allPosts = Object.values(scenarioData.results).flatMap(res => res.posts);
+            // 重複投稿を削除
+            const uniquePosts = Array.from(new Map(allPosts.map(post => [post.text, post])).values());
+
             const createGenderChart = (data) => {
                 const ctx = document.getElementById('genderChart').getContext('2d');
                 if (genderChart) genderChart.destroy();
                 genderChart = new Chart(ctx, {
                     type: 'doughnut',
-                    data: {
-                        labels: data.labels,
-                        datasets: [{ data: data.data, backgroundColor: ['#fb923c', '#60a5fa'], borderColor: '#ffffff', borderWidth: 2 }]
-                    },
+                    data: { labels: data.labels, datasets: [{ data: data.data, backgroundColor: ['#fb923c', '#60a5fa'], borderColor: '#ffffff', borderWidth: 2 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
                 });
             };
@@ -457,10 +462,7 @@
                 if (ageChart) ageChart.destroy();
                 ageChart = new Chart(ctx, {
                     type: 'bar',
-                    data: {
-                        labels: data.labels,
-                        datasets: [{ label: '年代分布', data: data.data, backgroundColor: '#60a5fa', borderRadius: 4 }]
-                    },
+                    data: { labels: data.labels, datasets: [{ label: '年代分布', data: data.data, backgroundColor: '#60a5fa', borderRadius: 4 }] },
                     options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
                 });
             };
@@ -468,6 +470,12 @@
             const createWordCloudChart = (data) => {
                 const container = document.getElementById('wordCloudChart');
                 container.innerHTML = '';
+                if (data.length === 0) {
+                    container.textContent = 'データがありません';
+                    container.classList.add('text-gray-500');
+                    return;
+                }
+                container.classList.remove('text-gray-500');
                 const maxValue = Math.max(...data.map(item => item.value), 0);
                 data.forEach(item => {
                     const span = document.createElement('span');
@@ -484,52 +492,130 @@
             const displayScenario = (scenarioId) => {
                 const data = scenarioData.results[scenarioId];
                 if (!data) return;
-
-                document.querySelectorAll('.scenario-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.scenarioId === scenarioId);
-                });
-
+                
+                document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.scenarioId === scenarioId));
+                
                 document.getElementById('dashboard-title').textContent = data.title;
                 document.getElementById('dashboard-period').textContent = data.period;
                 document.getElementById('metric-patients').textContent = data.metrics.patients;
                 document.getElementById('metric-posts').textContent = data.metrics.posts;
                 document.getElementById('metric-keyword').textContent = data.metrics.keyword;
                 document.getElementById('metric-sentiment').textContent = data.metrics.sentiment;
-
+                
                 createGenderChart(data.gender);
                 createAgeChart(data.age);
                 createWordCloudChart(data.wordCloud);
-
+                
                 const container = document.getElementById('patient-voice-container');
                 container.innerHTML = '';
-                data.posts.forEach(post => {
-                    const postEl = document.createElement('div');
-                    postEl.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
-                    postEl.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <p class="text-sm font-semibold text-gray-700">${post.user}</p>
-                            <p class="text-xs text-gray-400">${post.date}</p>
-                        </div>
-                        <p class="text-sm text-gray-600 mt-2">${post.text}</p>
-                    `;
-                    container.appendChild(postEl);
-                });
+                if(data.posts.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-500">該当する投稿はありません。</p>`;
+                } else {
+                    data.posts.forEach(post => {
+                        const postEl = document.createElement('div');
+                        postEl.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
+                        postEl.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <p class="text-sm font-semibold text-gray-700">${post.user}</p>
+                                <p class="text-xs text-gray-400">${post.date}</p>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-2">${post.text}</p>
+                        `;
+                        container.appendChild(postEl);
+                    });
+                }
             };
 
-            // --- Initial Setup ---
             const scenarioButtonsContainer = document.getElementById('scenario-buttons');
-            scenarioButtonsContainer.innerHTML = ''; // ボタンの重複作成を防ぐ
+            scenarioButtonsContainer.innerHTML = '';
             scenarioData.scenarios.forEach(scenario => {
                 const button = document.createElement('button');
                 button.className = 'scenario-btn';
                 button.dataset.scenarioId = scenario.id;
-                button.innerHTML = `
-                    ${scenario.name}
-                    <div class="description">${scenario.description}</div>
-                `;
-                button.addEventListener('click', () => displayScenario(scenario.id));
+                button.innerHTML = `${scenario.name}<div class="description">${scenario.description}</div>`;
+                button.addEventListener('click', () => {
+                    filterForm.reset(); // シナリオ選択時にフィルターをリセット
+                    displayScenario(scenario.id);
+                });
                 scenarioButtonsContainer.appendChild(button);
             });
+            
+            // --- カスタム分析の実行 ---
+            applyFiltersBtn.addEventListener('click', () => {
+                const keyword = keywordInput.value.toLowerCase();
+                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+                const gender = genderInput.value;
+                const age = ageInput.value;
+
+                // 絞り込み処理
+                const filteredPosts = uniquePosts.filter(post => {
+                    // キーワード
+                    if (keyword && !post.text.toLowerCase().includes(keyword)) return false;
+
+                    // 期間
+                    const postDate = new Date(post.date);
+                    if (startDate && postDate < startDate) return false;
+                    if (endDate && postDate > endDate) return false;
+
+                    // 属性 (user文字列から正規表現で抽出)
+                    const match = post.user.match(/\((\d{2})代(男性|女性)\)/);
+                    if(match) {
+                        const postAge = `${match[1]}s`;
+                        const postGender = match[2] === '男性' ? 'male' : 'female';
+                        
+                        if(gender !== 'all' && postGender !== gender) return false;
+                        if(age !== 'all' && postAge !== age) return false;
+                    } else {
+                         // 投稿に属性情報がない場合は絞り込み対象外とする
+                         if (gender !== 'all' || age !== 'all') return false;
+                    }
+                    
+                    return true;
+                });
+                
+                // 分析結果を動的に生成
+                const patientSet = new Set(filteredPosts.map(p => p.user.split(' ')[0]));
+                const genderCounts = { female: 0, male: 0 };
+                const ageCounts = { '10s': 0, '20s': 0, '30s': 0, '40s': 0, '50s': 0, '60s': 0 };
+                const ageLabels = { '10s': '10代', '20s': '20代', '30s': '30代', '40s': '40代', '50s': '50代', '60s': '60代以上' };
+
+                filteredPosts.forEach(post => {
+                    const match = post.user.match(/\((\d{2})代(男性|女性)\)/);
+                    if(match) {
+                        const postAge = `${match[1]}s`;
+                        const postGender = match[2] === '男性' ? 'male' : 'female';
+                        genderCounts[postGender]++;
+                        if (ageCounts[postAge] !== undefined) ageCounts[postAge]++;
+                    }
+                });
+                
+                const customResult = {
+                    title: "カスタム分析結果",
+                    period: `絞り込み結果: ${filteredPosts.length}件`,
+                    metrics: {
+                        patients: `${patientSet.size}人`,
+                        posts: `${filteredPosts.length}件`,
+                        keyword: keyword || '-',
+                        sentiment: '-%' // カスタム分析では算出しない
+                    },
+                    gender: {
+                        labels: ['女性', '男性'],
+                        data: [genderCounts.female, genderCounts.male]
+                    },
+                    age: {
+                        labels: Object.values(ageLabels),
+                        data: Object.values(ageCounts)
+                    },
+                    wordCloud: [], // 簡単ではないため今回は空
+                    posts: filteredPosts
+                };
+
+                // 結果を格納して表示
+                scenarioData.results['custom-analysis'] = customResult;
+                displayScenario('custom-analysis');
+            });
+
 
             if (scenarioData.scenarios.length > 0) {
                 displayScenario(scenarioData.scenarios[0].id);
